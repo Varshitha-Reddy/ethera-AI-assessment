@@ -17,3 +17,15 @@ yarn-error.log*
 
 # VS Code
 .vscode/
+
+# Claude / Anthropic tooling
+.claude*
+claude*
+claude/
+claude.*
+claude.log
+claude.json
+claude.yaml
+claude.env
+claude_tokens
+anthropic*
