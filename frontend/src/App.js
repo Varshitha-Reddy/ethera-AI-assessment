@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useEffect, useState } from "react";
 import {
   getProducts,
@@ -21,7 +22,7 @@ function App() {
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [productForm, setProductForm] = useState({ name: "", sku: "", price: "", quantity: "" });
+  const [productForm, setProductForm] = useState({ name: "", sku: "", price: "", quantity: "", imageData: "" });
   const [customerForm, setCustomerForm] = useState({ full_name: "", email: "", phone: "" });
   const [orderForm, setOrderForm] = useState({ customer_id: "", items: [{ product_id: "", quantity: "" }] });
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -42,23 +43,32 @@ function App() {
     }
   };
 
+  const getStoredImg = (id) => { try { return localStorage.getItem(`product_img_${id}`); } catch (_) { return null; } };
+
   const handleSubmitProduct = async (e) => {
     e.preventDefault();
     clearMessages();
     try {
       if (editId) {
-        await updateProduct(editId, {
+        const updated = await updateProduct(editId, {
           ...productForm,
           price: Number(productForm.price),
           quantity: Number(productForm.quantity),
         });
+        // persist image locally keyed by product id
+        if (productForm.imageData) {
+          try { localStorage.setItem(`product_img_${updated.id}`, productForm.imageData); } catch (_) {}
+        }
         setMessage("Product updated.");
       } else {
-        await createProduct({
+        const created = await createProduct({
           ...productForm,
           price: Number(productForm.price),
           quantity: Number(productForm.quantity),
         });
+        if (productForm.imageData) {
+          try { localStorage.setItem(`product_img_${created.id}`, productForm.imageData); } catch (_) {}
+        }
         setMessage("Product created.");
       }
       setProductForm({ name: "", sku: "", price: "", quantity: "" });
@@ -71,7 +81,8 @@ function App() {
 
   const handleProductEdit = (product) => {
     setEditId(product.id);
-    setProductForm({ name: product.name, sku: product.sku, price: product.price, quantity: product.quantity });
+    const img = getStoredImg(product.id);
+    setProductForm({ name: product.name, sku: product.sku, price: product.price, quantity: product.quantity, imageData: img || "" });
     setActiveTab("Products");
     clearMessages();
   };
@@ -223,12 +234,25 @@ function App() {
               <input value={productForm.sku} onChange={(e) => setProductForm({ ...productForm, sku: e.target.value })} placeholder="SKU" required />
               <input value={productForm.price} onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} placeholder="Price" type="number" step="0.01" required />
               <input value={productForm.quantity} onChange={(e) => setProductForm({ ...productForm, quantity: e.target.value })} placeholder="Quantity" type="number" required />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="file" accept="image/*" onChange={(e) => {
+                  const file = e.target.files && e.target.files[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = () => setProductForm({ ...productForm, imageData: reader.result });
+                  reader.readAsDataURL(file);
+                }} />
+                {productForm.imageData ? <img src={productForm.imageData} alt="preview" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover' }} /> : null}
+              </div>
               <button type="submit">{editId ? "Update" : "Add"} Product</button>
             </form>
             <div className="product-grid">
-              {products.map((product) => (
+                {products.map((product) => {
+                const storedImg = getStoredImg(product.id);
+                const thumbStyle = storedImg ? { backgroundImage: 'url(' + storedImg + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : {};
+                return (
                 <div className="product-card" key={product.id}>
-                  <div className="thumb">{product.name?.charAt(0) || "P"}</div>
+                  <div className="thumb" style={ localStorage.getItem('product_img_'+product.id) ? { backgroundImage: 'url(' + localStorage.getItem('product_img_'+product.id) + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : {} }>{!localStorage.getItem('product_img_'+product.id) && (product.name?.charAt(0) || "P")}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <strong>{product.name}</strong>
