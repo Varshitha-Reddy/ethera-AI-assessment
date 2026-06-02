@@ -175,18 +175,28 @@ function App() {
 
   return (
     <div className="page">
-      <header>
-        <h1>Ethera Inventory Management</h1>
-        <p>Inventory, customers, orders in one place.</p>
-      </header>
-      <nav>
-        {tabs.map((tab) => (
-          <button key={tab} className={activeTab === tab ? "active" : ""} onClick={() => { setActiveTab(tab); clearMessages(); }}>
-            {tab}
-          </button>
-        ))}
-      </nav>
-      <main>
+      <div className="app-container">
+        <aside className="sidebar">
+          <div className="brand">Ethera</div>
+          <nav className="side-nav">
+            {tabs.map((tab) => (
+              <button key={tab} className={activeTab === tab ? "active" : ""} onClick={() => { setActiveTab(tab); clearMessages(); }}>
+                {tab}
+              </button>
+            ))}
+          </nav>
+          <div className="sidebar-stats">
+            <div><strong>Products:</strong> {products.length}</div>
+            <div><strong>Customers:</strong> {customers.length}</div>
+            <div><strong>Orders:</strong> {orders.length}</div>
+          </div>
+        </aside>
+        <div className="main-content">
+          <header>
+            <h1>Ethera Inventory Management</h1>
+            <p>Inventory, customers, orders in one place.</p>
+          </header>
+          <main>
         {(error || message) && (
           <div className={`message ${error ? "error" : "success"}`}>{error || message}</div>
         )}
@@ -215,26 +225,23 @@ function App() {
               <input value={productForm.quantity} onChange={(e) => setProductForm({ ...productForm, quantity: e.target.value })} placeholder="Quantity" type="number" required />
               <button type="submit">{editId ? "Update" : "Add"} Product</button>
             </form>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>Name</th><th>SKU</th><th>Price</th><th>Stock</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                  {products.map((product) => (
-                    <tr key={product.id}>
-                      <td>{product.name}</td>
-                      <td>{product.sku}</td>
-                      <td>${product.price.toFixed(2)}</td>
-                      <td>{product.quantity}</td>
-                      <td>
-                        <button onClick={() => handleProductEdit(product)}>Edit</button>
-                        <button className="danger" onClick={() => handleDeleteProduct(product.id)}>Delete</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="product-grid">
+              {products.map((product) => (
+                <div className="product-card" key={product.id}>
+                  <div className="thumb">{product.name?.charAt(0) || "P"}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <strong>{product.name}</strong>
+                      <div>${product.price.toFixed(2)}</div>
+                    </div>
+                    <div style={{ color: "#6b7280", fontSize: "0.95rem" }}>{product.sku} • {product.quantity} in stock</div>
+                    <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+                      <button onClick={() => handleProductEdit(product)}>Edit</button>
+                      <button className="danger" onClick={() => handleDeleteProduct(product.id)}>Delete</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
         )}
@@ -313,30 +320,29 @@ function App() {
                 </div>
               </div>
             )}
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr><th>ID</th><th>Customer</th><th>Total</th><th>Items</th><th>Action</th></tr>
-                </thead>
-                <tbody>
-                  {orders.map((order) => (
-                    <tr key={order.id}>
-                      <td>{order.id}</td>
-                      <td>{customers.find((c) => c.id === order.customer_id)?.full_name || "Unknown"}</td>
-                      <td>${order.total_amount.toFixed(2)}</td>
-                      <td>{order.items.map((item) => `${item.product_name} x${item.quantity}`).join(", ")}</td>
-                      <td>
-                        <button onClick={() => handleViewOrder(order)}>View</button>
-                        <button className="danger" onClick={() => handleDeleteOrder(order.id)}>Cancel</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="product-grid">
+              {orders.map((order) => (
+                <div className="product-card" key={order.id} style={{ alignItems: 'flex-start' }}>
+                  <div className="thumb">#{order.id}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div><strong>Order #{order.id}</strong><div style={{ color: '#6b7280', fontSize: '0.95rem' }}>{customers.find((c) => c.id === order.customer_id)?.full_name || 'Unknown'}</div></div>
+                      <div style={{ fontWeight: 700 }}>${order.total_amount.toFixed(2)}</div>
+                    </div>
+                    <div style={{ marginTop: 8, color: '#374151' }}>{order.items.map((item) => `${item.product_name} x${item.quantity}`).join(', ')}</div>
+                    <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                      <button onClick={() => handleViewOrder(order)}>View</button>
+                      <button className="danger" onClick={() => handleDeleteOrder(order.id)}>Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
         )}
       </main>
+        </div>
+      </div>
     </div>
   );
 }
