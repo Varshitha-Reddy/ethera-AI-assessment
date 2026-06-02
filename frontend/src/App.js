@@ -137,6 +137,16 @@ function App() {
     }
   };
 
+  const removeOrderItem = (index) => {
+    const items = [...orderForm.items];
+    if (items.length <= 1) {
+      setOrderForm({ ...orderForm, items: [{ product_id: "", quantity: "" }] });
+      return;
+    }
+    items.splice(index, 1);
+    setOrderForm({ ...orderForm, items });
+  };
+
   const handleViewOrder = (order) => {
     setSelectedOrder(order);
     clearMessages();
@@ -273,6 +283,7 @@ function App() {
                     {products.map((prod) => <option key={prod.id} value={prod.id}>{prod.name} ({prod.quantity} left)</option>)}
                   </select>
                   <input value={item.quantity} onChange={(e) => handleOrderItemChange(index, "quantity", e.target.value)} type="number" min="1" placeholder="Qty" required />
+                  <button type="button" className="danger remove-item" onClick={() => removeOrderItem(index)}>Remove</button>
                 </div>
               ))}
               <button type="button" onClick={addOrderItem}>Add item</button>

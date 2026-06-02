@@ -26,7 +26,9 @@ section { background: #ffffff; border-radius: 16px; padding: 18px; box-shadow: 0
 .grid-form input, .grid-form select, .order-form select, .order-form input { width: 100%; border: 1px solid #d1d5db; border-radius: 10px; padding: 12px 14px; }
 .grid-form button, .order-form button { border: none; padding: 12px 18px; background: #2563eb; color: #fff; border-radius: 10px; cursor: pointer; }
 .order-form { display: grid; gap: 12px; margin-bottom: 20px; }
-.item-row { display: grid; grid-template-columns: 1.5fr 0.8fr; gap: 12px; }
+.item-row { display: grid; grid-template-columns: 1.5fr 0.8fr auto; gap: 12px; align-items: center; }
+.remove-item { background: #ef4444; color: #fff; border: none; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-weight: 700; }
+.remove-item:hover { opacity: 0.9; }
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #e5e7eb; }
