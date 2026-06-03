@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: ethera-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ethera-db
+          property: connectionString
+
+databases:
+  - name: ethera-db
+    plan: free

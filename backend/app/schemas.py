@@ -56,6 +56,7 @@ class OrderItemOut(BaseModel):
 class OrderOut(BaseModel):
     id: int
     customer_id: int
+    customer_name: str
     total_amount: float
     items: List[OrderItemOut]
 

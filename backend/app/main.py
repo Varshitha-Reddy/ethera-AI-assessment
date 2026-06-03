@@ -124,11 +124,7 @@ def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)):
 
 @app.get("/orders", response_model=list[schemas.OrderOut])
 def list_orders(db: Session = Depends(get_db)):
-    orders = db.query(models.Order).all()
-    result = []
-    for order in orders:
-        result.append(order)
-    return result
+    return db.query(models.Order).all()
 
 @app.get("/orders/{order_id}", response_model=schemas.OrderOut)
 def get_order(order_id: int, db: Session = Depends(get_db)):

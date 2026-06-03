@@ -48,30 +48,30 @@ function App() {
   const handleSubmitProduct = async (e) => {
     e.preventDefault();
     clearMessages();
+    const { imageData, ...apiPayload } = productForm;
     try {
       if (editId) {
         const updated = await updateProduct(editId, {
-          ...productForm,
-          price: Number(productForm.price),
-          quantity: Number(productForm.quantity),
+          ...apiPayload,
+          price: Number(apiPayload.price),
+          quantity: Number(apiPayload.quantity),
         });
-        // persist image locally keyed by product id
-        if (productForm.imageData) {
-          try { localStorage.setItem(`product_img_${updated.id}`, productForm.imageData); } catch (_) {}
+        if (imageData) {
+          try { localStorage.setItem(`product_img_${updated.id}`, imageData); } catch (_) {}
         }
         setMessage("Product updated.");
       } else {
         const created = await createProduct({
-          ...productForm,
-          price: Number(productForm.price),
-          quantity: Number(productForm.quantity),
+          ...apiPayload,
+          price: Number(apiPayload.price),
+          quantity: Number(apiPayload.quantity),
         });
-        if (productForm.imageData) {
-          try { localStorage.setItem(`product_img_${created.id}`, productForm.imageData); } catch (_) {}
+        if (imageData) {
+          try { localStorage.setItem(`product_img_${created.id}`, imageData); } catch (_) {}
         }
         setMessage("Product created.");
       }
-      setProductForm({ name: "", sku: "", price: "", quantity: "" });
+      setProductForm({ name: "", sku: "", price: "", quantity: "", imageData: "" });
       setEditId(null);
       loadAll();
     } catch (err) {
@@ -323,7 +323,7 @@ function App() {
             {selectedOrder && (
               <div className="details-card">
                 <h3>Order #{selectedOrder.id} details</h3>
-                <p><strong>Customer:</strong> {customers.find((c) => c.id === selectedOrder.customer_id)?.full_name || "Unknown"}</p>
+                <p><strong>Customer:</strong> {selectedOrder.customer_name || "Unknown"}</p>
                 <p><strong>Total:</strong> ${selectedOrder.total_amount.toFixed(2)}</p>
                 <div className="table-wrap">
                   <table>
@@ -350,7 +350,7 @@ function App() {
                   <div className="thumb">#{order.id}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div><strong>Order #{order.id}</strong><div style={{ color: '#6b7280', fontSize: '0.95rem' }}>{customers.find((c) => c.id === order.customer_id)?.full_name || 'Unknown'}</div></div>
+                      <div><strong>Order #{order.id}</strong><div style={{ color: '#6b7280', fontSize: '0.95rem' }}>{order.customer_name || 'Unknown'}</div></div>
                       <div style={{ fontWeight: 700 }}>${order.total_amount.toFixed(2)}</div>
                     </div>
                     <div style={{ marginTop: 8, color: '#374151' }}>{order.items.map((item) => `${item.product_name} x${item.quantity}`).join(', ')}</div>
