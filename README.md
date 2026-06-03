@@ -7,7 +7,7 @@ Full-stack Inventory & Order Management System built with React, FastAPI, Postgr
 | Service | URL |
 |---|---|
 | Frontend | _deployed on Netlify — add URL here_ |
-| Backend API | _deployed on Render — add URL here_ |
+| Backend API | https://ethera-backend.onrender.com |
 | Docker Hub | _add image URL here_ |
 
 ## Features
