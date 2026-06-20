@@ -1,0 +1,18 @@
+groups:
+  - name: ethera-slos
+    rules:
+      - alert: EtheraHighErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 0.001) > 0.01
+        for: 10m
+        labels: {severity: critical, slo: availability}
+        annotations: {summary: "API error budget is burning (>1% 5xx)"}
+      - alert: EtheraHighLatency
+        expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m]))) > 0.5
+        for: 10m
+        labels: {severity: warning, slo: latency}
+        annotations: {summary: "API p95 latency exceeds 500 ms"}
+      - alert: EtheraTargetDown
+        expr: up{job="ethera-api"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations: {summary: "Ethera API is unavailable"}

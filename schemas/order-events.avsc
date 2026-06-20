@@ -1,0 +1,13 @@
+{
+  "type": "record",
+  "name": "OrderEvent",
+  "namespace": "com.ethera.events.v1",
+  "fields": [
+    {"name": "event_id", "type": "string"},
+    {"name": "event_type", "type": {"type": "enum", "name": "OrderEventType", "symbols": ["ORDER_CREATED", "ORDER_CANCELLED"]}},
+    {"name": "order_id", "type": "long"},
+    {"name": "customer_id", "type": "long"},
+    {"name": "total_amount", "type": ["null", "double"], "default": null},
+    {"name": "occurred_at", "type": {"type": "long", "logicalType": "timestamp-millis"}}
+  ]
+}

@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Namespace
+metadata: {name: ethera}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: ethera-config, namespace: ethera}
+data:
+  ENABLE_AUTH: "true"
+  ENABLE_CACHE: "true"
+  KAFKA_ENABLED: "true"
+  CORS_ORIGINS: "https://app.example.com"
+  OTEL_SERVICE_NAME: "ethera-api"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.observability:4317"
+  REQUESTS_PER_MINUTE: "120"
+  GLOBAL_REQUESTS_PER_MINUTE: "5000"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: ethera-api, namespace: ethera}
+spec:
+  replicas: 3
+  strategy: {type: RollingUpdate, rollingUpdate: {maxUnavailable: 0, maxSurge: 1}}
+  selector: {matchLabels: {app: ethera-api}}
+  template:
+    metadata:
+      labels: {app: ethera-api}
+      annotations: {prometheus.io/scrape: "true", prometheus.io/port: "8000", prometheus.io/path: "/metrics"}
+    spec:
+      serviceAccountName: ethera-api
+      securityContext: {runAsNonRoot: true, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: api
+          image: ghcr.io/example/ethera-api:latest
+          imagePullPolicy: IfNotPresent
+          ports: [{name: http, containerPort: 8000}]
+          envFrom: [{secretRef: {name: ethera-secrets}}, {configMapRef: {name: ethera-config}}]
+          resources:
+            requests: {cpu: 250m, memory: 256Mi}
+            limits: {cpu: "1", memory: 768Mi}
+          readinessProbe: {httpGet: {path: /ready, port: http}, initialDelaySeconds: 5, periodSeconds: 5}
+          livenessProbe: {httpGet: {path: /health, port: http}, initialDelaySeconds: 15, periodSeconds: 10}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: ["ALL"]}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: ethera-api, namespace: ethera}
+spec:
+  selector: {app: ethera-api}
+  ports: [{name: http, port: 80, targetPort: http}]
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: ethera-api, namespace: ethera}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: ethera-api}
+  minReplicas: 3
+  maxReplicas: 20
+  behavior:
+    scaleDown: {stabilizationWindowSeconds: 300}
+  metrics:
+    - type: Resource
+      resource: {name: cpu, target: {type: Utilization, averageUtilization: 65}}
+    - type: Resource
+      resource: {name: memory, target: {type: Utilization, averageUtilization: 75}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: ethera-api, namespace: ethera}
+spec: {minAvailable: 2, selector: {matchLabels: {app: ethera-api}}}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ethera-api
+  namespace: ethera
+  annotations:
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  ingressClassName: nginx
+  tls: [{hosts: [api.example.com], secretName: ethera-api-tls}]
+  rules:
+    - host: api.example.com
+      http:
+        paths: [{path: /, pathType: Prefix, backend: {service: {name: ethera-api, port: {name: http}}}}]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: ethera-api, namespace: ethera}
+automountServiceAccountToken: false

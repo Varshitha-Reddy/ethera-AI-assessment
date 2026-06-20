@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata: {name: ethera-migrate, namespace: ethera}
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext: {runAsNonRoot: true, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: migrate
+          image: ghcr.io/example/ethera-api:latest
+          command: ["alembic", "upgrade", "head"]
+          envFrom: [{secretRef: {name: ethera-secrets}}, {configMapRef: {name: ethera-config}}]
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: ["ALL"]}}

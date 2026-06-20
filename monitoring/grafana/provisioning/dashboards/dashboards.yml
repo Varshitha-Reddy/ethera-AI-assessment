@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: Ethera
+    folder: Ethera
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

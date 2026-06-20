@@ -11,11 +11,15 @@ import {
   getOrders,
   createOrder,
   deleteOrder,
+  login,
+  logout,
 } from "./api";
 
 const tabs = ["Dashboard", "Products", "Customers", "Orders"];
 
 function App() {
+  const [authenticated, setAuthenticated] = useState(() => Boolean(localStorage.getItem("ethera_token")));
+  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -29,8 +33,28 @@ function App() {
   const [editId, setEditId] = useState(null);
 
   useEffect(() => {
-    loadAll();
-  }, []);
+    if (authenticated) loadAll();
+  }, [authenticated]);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await login(loginForm.username, loginForm.password);
+      setAuthenticated(true);
+    } catch (err) { setError(err.message); }
+  };
+
+  const compressImage = async (file) => {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 960 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    return canvas.toDataURL("image/webp", 0.78);
+  };
 
   const loadAll = async () => {
     try {
@@ -184,6 +208,21 @@ function App() {
 
   const lowStock = products.filter((p) => p.quantity <= 5);
 
+  if (!authenticated) {
+    return (
+      <div className="page login-page">
+        <form className="login-card" onSubmit={handleLogin}>
+          <h1>Ethera</h1>
+          <p>Sign in to inventory management.</p>
+          {error && <div className="message error">{error}</div>}
+          <input autoComplete="username" placeholder="Username" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })} required />
+          <input autoComplete="current-password" type="password" placeholder="Password" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} required />
+          <button type="submit">Sign in</button>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div className="page">
       <div className="app-container">
@@ -200,6 +239,7 @@ function App() {
             <div><strong>Products:</strong> {products.length}</div>
             <div><strong>Customers:</strong> {customers.length}</div>
             <div><strong>Orders:</strong> {orders.length}</div>
+            <button onClick={() => { logout(); setAuthenticated(false); }}>Sign out</button>
           </div>
         </aside>
         <div className="main-content">
@@ -235,14 +275,15 @@ function App() {
               <input value={productForm.price} onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} placeholder="Price" type="number" step="0.01" required />
               <input value={productForm.quantity} onChange={(e) => setProductForm({ ...productForm, quantity: e.target.value })} placeholder="Quantity" type="number" required />
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input type="file" accept="image/*" onChange={(e) => {
+                <input type="file" accept="image/*" onChange={async (e) => {
                   const file = e.target.files && e.target.files[0];
                   if (!file) return;
-                  const reader = new FileReader();
-                  reader.onload = () => setProductForm({ ...productForm, imageData: reader.result });
-                  reader.readAsDataURL(file);
+                  try {
+                    const imageData = await compressImage(file);
+                    setProductForm((current) => ({ ...current, imageData }));
+                  } catch (_) { setError("Could not process that image."); }
                 }} />
-                {productForm.imageData ? <img src={productForm.imageData} alt="preview" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover' }} /> : null}
+                {productForm.imageData ? <img loading="lazy" decoding="async" src={productForm.imageData} alt="preview" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover' }} /> : null}
               </div>
               <button type="submit">{editId ? "Update" : "Add"} Product</button>
             </form>
@@ -252,7 +293,7 @@ function App() {
                 const thumbStyle = storedImg ? { backgroundImage: 'url(' + storedImg + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : {};
                 return (
                 <div className="product-card" key={product.id}>
-                  <div className="thumb" style={ localStorage.getItem('product_img_'+product.id) ? { backgroundImage: 'url(' + localStorage.getItem('product_img_'+product.id) + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : {} }>{!localStorage.getItem('product_img_'+product.id) && (product.name?.charAt(0) || "P")}</div>
+                  <div className="thumb" style={thumbStyle}>{storedImg ? <img loading="lazy" decoding="async" src={storedImg} alt="" /> : (product.name?.charAt(0) || "P")}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <strong>{product.name}</strong>
